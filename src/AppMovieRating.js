@@ -1,6 +1,8 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import StarRating from "./StarRating";
+import { useMovies } from "./useMovies";
+import { useLocalstorageState } from "./useLocalstoragState";
 
 const title = "use Popcorn";
 
@@ -57,11 +59,11 @@ const average = (arr) =>
 const keyUrl = "apikey=ab418752";
 
 export default function App() {
-  const [movies, setMovies] = useState([]);
   const [query, setQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [watched, setWatched] = useState([]);
+  const { error, isLoading, movies } = useMovies(query);
+  const [watched , setWatched  ] = useLocalstorageState();
+
+  // const [watched, setWatched] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
 
   function handleSelecte(id) {
@@ -80,45 +82,13 @@ export default function App() {
     setWatched(upDateList);
   }
 
-  useEffect(() => {
-    const controller = new AbortController();
-    async function fetchMovies() {
-      try {
-        setError("");
-        setIsLoading(true);
-        const res = await fetch(
-          `http://www.omdbapi.com/?apikey=ab418752&s=${query}`,
-          { signal: controller.signal }
-        );
-
-        if (!res.ok)
-          throw new Error("something went wrong with fetching movie");
-
-        const data = await res.json();
-
-        if (data.Response === "False") throw new Error("movie not found");
-
-        setMovies(data.Search);
-        setError("");
-      } catch (err) {
-        if (err.name !== "AbortError") setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    if (!query.length) {
-      setMovies([]);
-      setError("enter name of movie");
-      return;
-    }
-
-    handleClose();
-    fetchMovies();
-
-    return () => {
-      controller.abort();
-    };
-  }, [query]);
+  // useEffect(() => {
+  //   // reading list watched of localstorage
+  //   if (localStorage.getItem("watched")) {
+  //     const dataLoc = localStorage.getItem("watched");
+  //     setWatched(JSON.parse(dataLoc));
+  //   }
+  // }, []);
 
   return (
     <>
@@ -337,10 +307,10 @@ function Watched({ watched, handleDelete }) {
 }
 
 function Summery({ watched }) {
-  const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
-  const avgUserRating = average(watched.map((movie) => movie.userRating));
+  const avgImdbRating = average(watched?.map((movie) => movie.imdbRating));
+  const avgUserRating = average(watched?.map((movie) => movie.userRating));
   const avgRuntime = average(
-    watched.map((movie) => Number(movie.Runtime.split(" ").at(0)))
+    watched?.map((movie) => Number(movie.Runtime?.split(" ").at(0)))
   );
 
   return (
@@ -349,7 +319,7 @@ function Summery({ watched }) {
       <div>
         <p>
           <span>#️⃣</span>
-          <span>{watched.length} movies</span>
+          <span>{watched?.length} movies</span>
         </p>
         <p>
           <span>⭐️</span>
